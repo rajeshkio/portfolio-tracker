@@ -1,0 +1,13 @@
+{
+    "portfolio": [
+        {"ticker": "HDFCBANK.NS", "buy_price": 1000.00, "qty": 100},
+        {"ticker": "INFY.NS", "buy_price": 1500.00, "qty": 50},
+        {"ticker": "MSFT", "buy_price": 400.00, "qty": 10},
+        {"ticker": "GOLDBEES.NS", "buy_price": 50.00, "qty": 500},
+        {"ticker": "NSDL.BO", "buy_price": 800.00, "qty": 35}
+    ],
+    "watchlist": [
+        {"ticker": "IRCTC.NS"},
+        {"ticker": "SOLARINDS.NS"}
+    ]
+}
