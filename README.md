@@ -18,18 +18,27 @@ Displays live prices, P&L, day change, and on-demand news headlines.
 ## Setup
 
 ### 1. Clone the repository
+
+```
 git clone <your-repo-url>
 cd stock-one
+```
 
 ### 2. Create virtual environment
+```
 python3 -m venv venv
 source venv/bin/activate
+```
 
 ### 3. Install dependencies
+```
 pip3 install -r requirements.txt
+```
 
 ### 4. Set up your portfolio
+```
 cp portfolio.json.example portfolio.json
+```
 
 Open portfolio.json and fill in your actual data:
 - ticker: NSE stocks use TICKER.NS, BSE stocks use TICKER.BO, US stocks use ticker as-is
@@ -37,7 +46,9 @@ Open portfolio.json and fill in your actual data:
 - qty: number of shares you hold
 
 ### 5. Run
+```
 python3 tracker.py
+```
 
 ## Usage
 - The table auto-renders with live prices on every run
