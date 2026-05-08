@@ -55,6 +55,10 @@ for stock in portfolio:
         # If any ticker fails (wrong symbol, delisted, no data), skip it and continue
         print(f"Skipping {stock['ticker']}: {e}")
 
+def get_pnl_pct(r):
+    return r["pnl_pct"]
+results.sort(key=get_pnl_pct, reverse=True)
+
 total_invested = sum(r["invested"] for r in results)
 total_pnl_rs = sum(r["pnl_rs"] for r in results)
 total_pnl_pct = (total_pnl_rs/total_invested) * 100
@@ -157,3 +161,4 @@ try:
         show_news(ticker_input)
 except KeyboardInterrupt:
     console.print("\n[bold yellow]Exiting...[/bold yellow]")
+
