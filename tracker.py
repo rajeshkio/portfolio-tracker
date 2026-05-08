@@ -2,7 +2,9 @@ import yfinance as yf
 import json
 from rich.console import Console
 from rich.table import Table
+import datetime
 
+dateNow = datetime.datetime.now().strftime("%d %b %Y, %I:%M %p")
 def show_news(ticker_symbol):
     # Fetch latest news for a given ticker using yfinance's built-in news property
     t = yf.Ticker(ticker_symbol)
@@ -65,7 +67,7 @@ total_pnl_pct = (total_pnl_rs/total_invested) * 100
 
 console = Console()
 
-table = Table(title="Portfolio Tracker")
+table = Table(title=f"Portfolio Tracker | {dateNow}")
 
 # justify="right" aligns numbers to the right, standard for financial tables
 table.add_column("Stock", style="bold white")
@@ -107,7 +109,6 @@ table.add_row(
     f"[bold][{total_color}]{total_pnl_rs:,.2f}[/{total_color}][/bold]",
     f"[bold][{total_color}]{total_pnl_pct:.2f}%[/{total_color}][/bold]"
 )
-
 console.print(table)
 
 # Watchlist — stocks we monitor but don't own yet. No P&L columns needed
