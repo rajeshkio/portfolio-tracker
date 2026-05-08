@@ -40,6 +40,7 @@ for stock in portfolio:
         previous_close = hist["Close"].iloc[-2]        # iloc[-2] = second last row = yesterday
         # Day change % uses previous close, not open — matches what Zerodha/NSE shows
         day_change_pct = ((current_price - previous_close) / previous_close) * 100
+        daily_pnl_rs = (current_price - previous_close) * stock["qty"]
         invested = stock["buy_price"] * stock["qty"]
         current_value = current_price * stock["qty"]
         pnl_rs = current_value - invested
@@ -49,6 +50,7 @@ for stock in portfolio:
             "ticker": stock["ticker"],
             "current_price":round(float(current_price),2),
             "day_change_pct":round(float(day_change_pct),4),
+            "daily_pnl_rs" :round(float(daily_pnl_rs),2),
             "invested":round(invested,2),
             "pnl_rs":round(float(pnl_rs),2),
             "pnl_pct":round(float(pnl_pct),4)
@@ -64,6 +66,7 @@ results.sort(key=get_pnl_pct, reverse=True)
 total_invested = sum(r["invested"] for r in results)
 total_pnl_rs = sum(r["pnl_rs"] for r in results)
 total_pnl_pct = (total_pnl_rs/total_invested) * 100
+total_day_rs = sum(r["daily_pnl_rs"] for r in results)
 
 console = Console()
 
@@ -73,6 +76,7 @@ table = Table(title=f"Portfolio Tracker | {dateNow}")
 table.add_column("Stock", style="bold white")
 table.add_column("Price (₹)", justify="right")
 table.add_column("Day %", justify="right")
+table.add_column("Day (₹)", justify="right")
 table.add_column("Invested (₹)", justify="right")
 table.add_column("P&L (₹)", justify="right")
 table.add_column("P&L %", justify="right")
@@ -85,6 +89,7 @@ for r in results:
     # :,.2f formats numbers with thousand separators and 2 decimal places
     price_str = f"{r['current_price']:,.2f}"
     day_str = f"[{day_color}]{r['day_change_pct']:.2f}%[/{day_color}]"
+    day_rs_str = f"[{day_color}]{r['daily_pnl_rs']:.2f}[/{day_color}]"
     invested_str = f"{r['invested']:,.2f}"
     pnl_rs_str = f"[{pnl_color}]{r['pnl_rs']:,.2f}[/{pnl_color}]"
     pnl_pct_str = f"[{pnl_color}]{r['pnl_pct']:.2f}%[/{pnl_color}]"
@@ -93,6 +98,7 @@ for r in results:
     display_ticker,
     price_str,
     day_str,
+    day_rs_str,
     invested_str,
     pnl_rs_str,
     pnl_pct_str,
@@ -105,6 +111,7 @@ table.add_row(
     "[bold]TOTAL[/bold]",
     "",
     "",
+    f"[bold][{total_color}]{total_day_rs:,.2f}[/{total_color}][/bold]",
     f"[bold]{total_invested:,.2f}[/bold]",
     f"[bold][{total_color}]{total_pnl_rs:,.2f}[/{total_color}][/bold]",
     f"[bold][{total_color}]{total_pnl_pct:.2f}%[/{total_color}][/bold]"
