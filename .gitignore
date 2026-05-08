@@ -2,3 +2,5 @@ portfolio.json
 venv/
 __pycache__/
 *.pyc
+fundamentals.json
+.vscode/
