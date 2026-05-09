@@ -1,4 +1,6 @@
 import yfinance as yf
+from rich.console import Console
+from rich.table import Table
 
 
 def fmt(value):
@@ -42,3 +44,56 @@ def fetch_stock_data(ticker, buy_price, qty):
         "pnl_rs": round(float(pnl_rs), 2),
         "pnl_pct": round(float(pnl_pct), 4),
     }
+
+def build_pnl_table(results, title):
+    table = Table(title=title)
+    table.add_column("Stock", style="bold white")
+    table.add_column("Price (₹)", justify="right")
+    table.add_column("Last Day %", justify="right")
+    table.add_column("Last Day (₹)", justify="right")
+    table.add_column("Invested (₹)", justify="right")
+    table.add_column("P&L (₹)", justify="right")
+    table.add_column("P&L %", justify="right")
+    results.sort(key=get_pnl_pct, reverse=True)
+    for r in results:
+        pnl_color = "green" if r["pnl_rs"] >= 0 else "red"
+        day_color = "green" if r["day_change_pct"] >= 0 else "red"
+        # Strip exchange suffixes for clean display — HDFCBANK.NS becomes HDFCBANK
+        display_ticker = clean_ticker(r["ticker"])
+        # :,.2f formats numbers with thousand separators and 2 decimal places
+        price_str = f"{r['current_price']:,.2f}"
+        day_str = f"[{day_color}]{r['day_change_pct']:.2f}%[/{day_color}]"
+        day_rs_str = f"[{day_color}]{r['daily_pnl_rs']:.2f}[/{day_color}]"
+        invested_str = f"{r['invested']:,.2f}"
+        pnl_rs_str = f"[{pnl_color}]{r['pnl_rs']:,.2f}[/{pnl_color}]"
+        pnl_pct_str = f"[{pnl_color}]{r['pnl_pct']:.2f}%[/{pnl_color}]"
+
+        table.add_row(
+            display_ticker,
+            price_str,
+            day_str,
+            day_rs_str,
+            invested_str,
+            pnl_rs_str,
+            pnl_pct_str,
+        )
+    
+    total_invested = sum(r["invested"] for r in results)
+    total_pnl_rs = sum(r["pnl_rs"] for r in results)
+    total_pnl_pct = (total_pnl_rs / total_invested) * 100
+    total_day_rs = sum(r["daily_pnl_rs"] for r in results)
+
+
+    # add_section() draws a separator line above the total row
+    table.add_section()
+    total_color = "green" if total_pnl_rs >= 0 else "red"
+    table.add_row(
+        "[bold]TOTAL[/bold]",
+        "",
+        "",
+        f"[bold][{total_color}]{total_day_rs:,.2f}[/{total_color}][/bold]",
+        f"[bold]{total_invested:,.2f}[/bold]",
+        f"[bold][{total_color}]{total_pnl_rs:,.2f}[/{total_color}][/bold]",
+        f"[bold][{total_color}]{total_pnl_pct:.2f}%[/{total_color}][/bold]",
+    )
+    return table
