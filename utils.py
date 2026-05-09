@@ -7,20 +7,25 @@ from rich.table import Table
 def fmt(value):
     return str(round(float(value), 2)) if value is not None else "-"
 
+
 def fmt_pct(value):
     return f"{value * 100:.2f}%" if value is not None else "-"
 
+
 def get_pnl_pct(r):
     return r["pnl_pct"]
+
 
 def load_json(filename):
     with open(filename, "r") as f:
         data = json.load(f)
     return data
 
+
 def save_json(filename, data):
     with open(filename, "w") as f:
         json.dump(data, f)
+
 
 def clean_ticker(ticker):
     return ticker.replace(".NS", "").replace(".BO", "")
@@ -50,12 +55,13 @@ def fetch_stock_data(ticker, buy_price=None, qty=None):
         "current_price": round(float(current_price), 2),
         "day_change_pct": round(float(day_change_pct), 4),
     }
-    if qty is not None and buy_price is not None :
-        result["daily_pnl_rs"] =  round(float(daily_pnl_rs), 2)
+    if qty is not None and buy_price is not None:
+        result["daily_pnl_rs"] = round(float(daily_pnl_rs), 2)
         result["invested"] = round(invested, 2)
         result["pnl_rs"] = round(float(pnl_rs), 2)
-        result["pnl_pct"] = round(float(pnl_pct), 4)    
+        result["pnl_pct"] = round(float(pnl_pct), 4)
     return result
+
 
 def build_pnl_table(results, title):
     table = Table(title=title)
@@ -89,12 +95,11 @@ def build_pnl_table(results, title):
             pnl_rs_str,
             pnl_pct_str,
         )
-    
+
     total_invested = sum(r["invested"] for r in results)
     total_pnl_rs = sum(r["pnl_rs"] for r in results)
     total_pnl_pct = (total_pnl_rs / total_invested) * 100
     total_day_rs = sum(r["daily_pnl_rs"] for r in results)
-
 
     # add_section() draws a separator line above the total row
     table.add_section()
@@ -110,7 +115,8 @@ def build_pnl_table(results, title):
     )
     return table
 
-def build_watchlist_table(results,title):
+
+def build_watchlist_table(results, title):
     table = Table(title=title)
     table.add_column("Stock", style="bold white")
     table.add_column("Price (₹)", justify="right")
@@ -125,6 +131,7 @@ def build_watchlist_table(results,title):
             f"[{day_color}]{r['day_change_pct']:.2f}%[/{day_color}]",
         )
     return table
+
 
 def show_news(ticker_symbol):
     # Fetch latest news for a given ticker using yfinance's built-in news property
@@ -144,10 +151,9 @@ def show_news(ticker_symbol):
         print(f"\n {publisher}")
         print(f" {url}")
 
-def show_news_prompt(portfolio,console):
-    ticker_map = {
-        clean_ticker(s["ticker"]): s["ticker"] for s in portfolio
-    }
+
+def show_news_prompt(portfolio, console):
+    ticker_map = {clean_ticker(s["ticker"]): s["ticker"] for s in portfolio}
     valid_tickers = list(ticker_map.keys())
     console.print(f"\n[bold]Available tickers:[/bold] {', '.join(valid_tickers)}")
     try:
@@ -165,4 +171,66 @@ def show_news_prompt(portfolio,console):
             show_news(ticker_input)
     except KeyboardInterrupt:
         console.print("\n[bold yellow]Exiting...[/bold yellow]")
-    
+
+
+def fetch_fundamentals(ticker, dateNow):
+    t = yf.Ticker(ticker)
+    return {
+        "ticker": ticker,
+        "trailingPE": t.info.get("trailingPE", None),
+        "forwardPE": t.info.get("forwardPE", None),
+        "trailingEps": t.info.get("trailingEps", None),
+        "earningsGrowth": t.info.get("earningsGrowth", None),
+        "returnOnEquity": t.info.get("returnOnEquity", None),
+        "profitMargins": t.info.get("profitMargins", None),
+        "targetMeanPrice": t.info.get("targetMeanPrice", None),
+        "recommendationKey": t.info.get("recommendationKey", None),
+        "lastUpdated": dateNow,
+    }
+
+
+def build_fundamentals_table(data, title, dateNow):
+    table = Table(title=f"{title} | {dateNow}")
+    # justify="right" aligns numbers to the right, standard for financial tables
+    table.add_column("Stock", style="bold white")
+    table.add_column("P/E", justify="right")
+    table.add_column("Forward P/E", justify="right")
+    table.add_column("EPS", justify="right")
+    table.add_column("Earnings Growth", justify="right")
+    table.add_column("ROE", justify="right")
+    table.add_column("Profit Margin", justify="right")
+    table.add_column("Analyst Target", justify="right")
+    table.add_column("Recommendation", justify="right")
+    table.add_column("Last Updated", justify="right")
+
+    for r in data:
+        if r["recommendationKey"] == "strong_buy" or r["recommendationKey"] == "buy":
+            recommend_color = "green"
+        elif r["recommendationKey"] == "hold":
+            recommend_color = "yellow"
+        else:
+            recommend_color = "white"
+        display_ticker = clean_ticker(r["ticker"])
+        pe_str = fmt(r["trailingPE"])
+        forward_pe = fmt(r["forwardPE"])
+        eps_str = fmt(r["trailingEps"])
+        earning_growth = fmt_pct(r["earningsGrowth"])
+        return_on_equity = fmt_pct(r["returnOnEquity"])
+        profit_margin = fmt_pct(r["profitMargins"])
+        target_mean_price = fmt(r["targetMeanPrice"])
+        recommendation = f"[{recommend_color}]{str(r['recommendationKey']).replace('_', ' ').title()}[/{recommend_color}]"
+        last_updated = r["lastUpdated"]
+
+        table.add_row(
+            display_ticker,
+            str(pe_str),
+            str(forward_pe),
+            str(eps_str),
+            str(earning_growth),
+            str(return_on_equity),
+            str(profit_margin),
+            str(target_mean_price),
+            recommendation,
+            last_updated,
+        )
+    return table
