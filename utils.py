@@ -19,31 +19,36 @@ def clean_ticker(ticker):
     return ticker.replace(".NS", "").replace(".BO", "")
 
 
-def fetch_stock_data(ticker, buy_price, qty):
+def fetch_stock_data(ticker, buy_price=None, qty=None):
     portfolioTicker = yf.Ticker(ticker)
     # period="2d" fetches today and yesterday so we can calculate day change %
     hist = portfolioTicker.history(period="2d").dropna()
+
     if len(hist) < 2:
         hist = portfolioTicker.history(period="5d").dropna()
+
     current_price = hist["Close"].iloc[-1]  # iloc[-1] = last row = today
     previous_close = hist["Close"].iloc[-2]  # iloc[-2] = second last row = yesterday
     # Day change % uses previous close, not open — matches what Zerodha/NSE shows
     day_change_pct = ((current_price - previous_close) / previous_close) * 100
-    daily_pnl_rs = (current_price - previous_close) * qty
-    invested = buy_price * qty
-    current_value = current_price * qty
-    pnl_rs = current_value - invested
-    pnl_pct = (pnl_rs / invested) * 100
+    if qty is not None:
+        daily_pnl_rs = (current_price - previous_close) * qty
+        invested = buy_price * qty
+        current_value = current_price * qty
+        pnl_rs = current_value - invested
+        pnl_pct = (pnl_rs / invested) * 100
     # float() strips numpy's np.float64 wrapper so we get clean Python floats
-    return {
+    result = {
         "ticker": ticker,
         "current_price": round(float(current_price), 2),
         "day_change_pct": round(float(day_change_pct), 4),
-        "daily_pnl_rs": round(float(daily_pnl_rs), 2),
-        "invested": round(invested, 2),
-        "pnl_rs": round(float(pnl_rs), 2),
-        "pnl_pct": round(float(pnl_pct), 4),
     }
+    if qty is not None and buy_price is not None :
+        result["daily_pnl_rs"] =  round(float(daily_pnl_rs), 2)
+        result["invested"] = round(invested, 2)
+        result["pnl_rs"] = round(float(pnl_rs), 2)
+        result["pnl_pct"] = round(float(pnl_pct), 4)    
+    return result
 
 def build_pnl_table(results, title):
     table = Table(title=title)
@@ -97,3 +102,37 @@ def build_pnl_table(results, title):
         f"[bold][{total_color}]{total_pnl_pct:.2f}%[/{total_color}][/bold]",
     )
     return table
+
+def build_watchlist_table(results,title):
+    table = Table(title=title)
+    table.add_column("Stock", style="bold white")
+    table.add_column("Price (₹)", justify="right")
+    table.add_column("Last Day %", justify="right")
+
+    for r in results:
+        day_color = "green" if r["day_change_pct"] >= 0 else "red"
+        display_ticker = clean_ticker(r["ticker"])
+        table.add_row(
+            display_ticker,
+            f"{r['current_price']:,.2f}",
+            f"[{day_color}]{r['day_change_pct']:.2f}%[/{day_color}]",
+        )
+    return table
+
+def show_news(ticker_symbol):
+    # Fetch latest news for a given ticker using yfinance's built-in news property
+    t = yf.Ticker(ticker_symbol)
+    news = t.news
+    if not news:
+        print("no news found.")
+        return
+    print(f"\nTop news for {ticker_symbol}:")
+    # Show only top 3 headlines. news[:3] slices the first 3 items from the list
+    for item in news[:3]:
+        # News data is deeply nested. Title and URL are inside content -> clickThroughUrl
+        title = item["content"]["title"]
+        publisher = item["content"]["provider"]["displayName"]
+        url = item["content"]["clickThroughUrl"]["url"]
+        print(f"\n  {title}")
+        print(f"\n {publisher}")
+        print(f" {url}")

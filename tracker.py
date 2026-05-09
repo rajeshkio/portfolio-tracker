@@ -7,26 +7,6 @@ import utils
 
 dateNow = datetime.datetime.now().strftime("%d %b %Y, %I:%M %p")
 
-
-def show_news(ticker_symbol):
-    # Fetch latest news for a given ticker using yfinance's built-in news property
-    t = yf.Ticker(ticker_symbol)
-    news = t.news
-    if not news:
-        print("no news found.")
-        return
-    print(f"\nTop news for {ticker_symbol}:")
-    # Show only top 3 headlines. news[:3] slices the first 3 items from the list
-    for item in news[:3]:
-        # News data is deeply nested. Title and URL are inside content -> clickThroughUrl
-        title = item["content"]["title"]
-        publisher = item["content"]["provider"]["displayName"]
-        url = item["content"]["clickThroughUrl"]["url"]
-        print(f"\n  {title}")
-        print(f"\n {publisher}")
-        print(f" {url}")
-
-
 # Load portfolio data from JSON file. Keeping data separate from code means
 # we never need to edit tracker.py when our holdings change
 with open("portfolio.json", "r") as f:
@@ -67,36 +47,13 @@ console.print(etf_table)
 # Watchlist — stocks we monitor but don't own yet. No P&L columns needed
 watchlist = data["watchlist"]
 watchlist_results = []
-for stock in watchlist:
+for r in watchlist:
     try:
-        wTicker = yf.Ticker(stock["ticker"])
-        hist = wTicker.history(period="2d")
-        current_price = hist["Close"].iloc[-1]
-        previous_close = hist["Close"].iloc[-2]
-        day_change_pct = ((current_price - previous_close) / previous_close) * 100
-        watchlist_results.append(
-            {
-                "ticker": stock["ticker"],
-                "current_price": round(float(current_price), 2),
-                "day_change_pct": round(float(day_change_pct), 4),
-            }
-        )
+        watchlist_results.append(utils.fetch_stock_data(r["ticker"]))
     except Exception as e:
-        print(f"Skipping {stock['ticker']}: {e}")
+        print(f"Skipping {r['ticker']}: {e}")
 
-watchlist_table = Table(title="Watchlist")
-watchlist_table.add_column("Stock", style="bold white")
-watchlist_table.add_column("Price (₹)", justify="right")
-watchlist_table.add_column("Last Day %", justify="right")
-
-for r in watchlist_results:
-    day_color = "green" if r["day_change_pct"] >= 0 else "red"
-    display_ticker = r["ticker"].replace(".NS", "").replace(".BO", "")
-    watchlist_table.add_row(
-        display_ticker,
-        f"{r['current_price']:,.2f}",
-        f"[{day_color}]{r['day_change_pct']:.2f}%[/{day_color}]",
-    )
+watchlist_table = utils.build_watchlist_table(watchlist_results,"Watchlist")
 console.print(watchlist_table)
 
 # Build ticker_map from portfolio for smart suffix handling in news lookup
@@ -118,6 +75,6 @@ try:
         elif ticker_input != "MSFT":
             # Default to .NS for any Indian stock not in portfolio
             ticker_input = ticker_input + ".NS"
-        show_news(ticker_input)
+        utils.show_news(ticker_input)
 except KeyboardInterrupt:
     console.print("\n[bold yellow]Exiting...[/bold yellow]")
