@@ -49,6 +49,4 @@ def run():
     console.print(table)
     console.print(etf_table)
     console.print(watchlist_table)
-
-    # --- News Prompt ---
-    utils.show_news_prompt(portfolio, console)
+    
