@@ -136,3 +136,26 @@ def show_news(ticker_symbol):
         print(f"\n  {title}")
         print(f"\n {publisher}")
         print(f" {url}")
+
+def show_news_prompt(portfolio,console):
+    ticker_map = {
+        clean_ticker(s["ticker"]): s["ticker"] for s in portfolio
+    }
+    valid_tickers = list(ticker_map.keys())
+    console.print(f"\n[bold]Available tickers:[/bold] {', '.join(valid_tickers)}")
+    try:
+        while True:
+            ticker_input = (
+                input("\nEnter ticker for news (or Enter to skip): ").strip().upper()
+            )
+            if not ticker_input:
+                break
+            if ticker_input in ticker_map:
+                ticker_input = ticker_map[ticker_input]
+            elif ticker_input != "MSFT":
+                # Default to .NS for any Indian stock not in portfolio
+                ticker_input = ticker_input + ".NS"
+            show_news(ticker_input)
+    except KeyboardInterrupt:
+        console.print("\n[bold yellow]Exiting...[/bold yellow]")
+    

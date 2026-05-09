@@ -1,7 +1,5 @@
-import yfinance as yf
 import json
 from rich.console import Console
-from rich.table import Table
 import datetime
 import utils
 
@@ -56,25 +54,5 @@ for r in watchlist:
 watchlist_table = utils.build_watchlist_table(watchlist_results,"Watchlist")
 console.print(watchlist_table)
 
-# Build ticker_map from portfolio for smart suffix handling in news lookup
-ticker_map = {
-    s["ticker"].replace(".NS", "").replace(".BO", ""): s["ticker"] for s in portfolio
-}
-valid_tickers = list(ticker_map.keys())
-console.print(f"\n[bold]Available tickers:[/bold] {', '.join(valid_tickers)}")
+utils.show_news_prompt(portfolio,console)
 
-try:
-    while True:
-        ticker_input = (
-            input("\nEnter ticker for news (or Enter to skip): ").strip().upper()
-        )
-        if not ticker_input:
-            break
-        if ticker_input in ticker_map:
-            ticker_input = ticker_map[ticker_input]
-        elif ticker_input != "MSFT":
-            # Default to .NS for any Indian stock not in portfolio
-            ticker_input = ticker_input + ".NS"
-        utils.show_news(ticker_input)
-except KeyboardInterrupt:
-    console.print("\n[bold yellow]Exiting...[/bold yellow]")
