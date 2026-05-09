@@ -1,4 +1,3 @@
-
 from rich.console import Console
 import datetime
 import utils
@@ -19,18 +18,20 @@ for stock in portfolio:
     except Exception as e:
         # If any ticker fails (wrong symbol, delisted, no data), skip it and continue
         print(f"Skipping {stock['ticker']}: {e}")
-table = utils.build_pnl_table(results,f"Portfolio Tracker | {dateNow}")
+table = utils.build_pnl_table(results, f"Portfolio Tracker | {dateNow}")
 
 # --- Fetch ETFs ---
 etf_portfolio = data["etfs"]
 etf_results = []
 for r in etf_portfolio:
     try:
-        etf_results.append(utils.fetch_stock_data(r["ticker"],r["buy_price"],r["qty"]))
+        etf_results.append(
+            utils.fetch_stock_data(r["ticker"], r["buy_price"], r["qty"])
+        )
     except Exception as e:
         # If any ticker fails (wrong symbol, delisted, no data), skip it and continue
         print(f"Skipping {r['ticker']}: {e}")
-etf_table = utils.build_pnl_table(etf_results,"ETFs")
+etf_table = utils.build_pnl_table(etf_results, "ETFs")
 
 # --- Fetch Watchlist ---
 # Watchlist — stocks we monitor but don't own yet. No P&L columns needed
@@ -41,7 +42,7 @@ for r in watchlist:
         watchlist_results.append(utils.fetch_stock_data(r["ticker"]))
     except Exception as e:
         print(f"Skipping {r['ticker']}: {e}")
-watchlist_table = utils.build_watchlist_table(watchlist_results,"Watchlist")
+watchlist_table = utils.build_watchlist_table(watchlist_results, "Watchlist")
 
 # --- Display Tables ---
 console.print(table)
@@ -49,4 +50,4 @@ console.print(etf_table)
 console.print(watchlist_table)
 
 # --- News Prompt ---
-utils.show_news_prompt(portfolio,console)
+utils.show_news_prompt(portfolio, console)

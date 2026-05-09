@@ -5,33 +5,40 @@ from rich.table import Table
 
 
 def fmt(value):
+    """Format a number to 2 decimal places, returns '-' if None."""
     return str(round(float(value), 2)) if value is not None else "-"
 
 
 def fmt_pct(value):
+    """Format percentage to 2 decimal places, returns '-' if None."""
     return f"{value * 100:.2f}%" if value is not None else "-"
 
 
 def get_pnl_pct(r):
+    """Return pnl_pct value from a result dictionary, used as a sort key"""
     return r["pnl_pct"]
 
 
 def load_json(filename):
+    """Load filename in json"""
     with open(filename, "r") as f:
         data = json.load(f)
     return data
 
 
 def save_json(filename, data):
+    """Write json data to a filename"""
     with open(filename, "w") as f:
         json.dump(data, f)
 
 
 def clean_ticker(ticker):
+    """Remove .NS and .BO from ticker to list properly in the table"""
     return ticker.replace(".NS", "").replace(".BO", "")
 
 
 def fetch_stock_data(ticker, buy_price=None, qty=None):
+    """Fetch portfolio stocks and calculate profit and loss"""
     portfolioTicker = yf.Ticker(ticker)
     # period="2d" fetches today and yesterday so we can calculate day change %
     hist = portfolioTicker.history(period="2d").dropna()
@@ -64,6 +71,7 @@ def fetch_stock_data(ticker, buy_price=None, qty=None):
 
 
 def build_pnl_table(results, title):
+    """Build and beautify portfolio stocks in a table"""
     table = Table(title=title)
     table.add_column("Stock", style="bold white")
     table.add_column("Price (₹)", justify="right")
@@ -117,6 +125,7 @@ def build_pnl_table(results, title):
 
 
 def build_watchlist_table(results, title):
+    """Build and beautify watchlist stocks in a table"""
     table = Table(title=title)
     table.add_column("Stock", style="bold white")
     table.add_column("Price (₹)", justify="right")
@@ -134,7 +143,7 @@ def build_watchlist_table(results, title):
 
 
 def show_news(ticker_symbol):
-    # Fetch latest news for a given ticker using yfinance's built-in news property
+    """Fetch latest news for a given ticker using yfinance's built-in news property"""
     t = yf.Ticker(ticker_symbol)
     news = t.news
     if not news:
@@ -153,6 +162,7 @@ def show_news(ticker_symbol):
 
 
 def show_news_prompt(portfolio, console):
+    """Give prompt for the user to get a news for portfolio stocks"""
     ticker_map = {clean_ticker(s["ticker"]): s["ticker"] for s in portfolio}
     valid_tickers = list(ticker_map.keys())
     console.print(f"\n[bold]Available tickers:[/bold] {', '.join(valid_tickers)}")
@@ -174,6 +184,7 @@ def show_news_prompt(portfolio, console):
 
 
 def fetch_fundamentals(ticker, dateNow):
+    """Fetch fundamental numbers for the portfolio stocks"""
     t = yf.Ticker(ticker)
     return {
         "ticker": ticker,
@@ -190,6 +201,7 @@ def fetch_fundamentals(ticker, dateNow):
 
 
 def build_fundamentals_table(data, title, dateNow):
+    """Build and beautify fundamentals into a table"""
     table = Table(title=f"{title} | {dateNow}")
     # justify="right" aligns numbers to the right, standard for financial tables
     table.add_column("Stock", style="bold white")
