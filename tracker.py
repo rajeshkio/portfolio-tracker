@@ -3,6 +3,7 @@ import json
 from rich.console import Console
 from rich.table import Table
 import datetime
+import utils
 
 dateNow = datetime.datetime.now().strftime("%d %b %Y, %I:%M %p")
 
@@ -38,7 +39,9 @@ for stock in portfolio:
     try:
         portfolioTicker = yf.Ticker(stock["ticker"])
         # period="2d" fetches today and yesterday so we can calculate day change %
-        hist = portfolioTicker.history(period="2d")
+        hist = portfolioTicker.history(period="2d").dropna()
+        if len(hist) < 2:
+            hist = portfolioTicker.history(period="5d").dropna()
         current_price = hist["Close"].iloc[-1]  # iloc[-1] = last row = today
         previous_close = hist["Close"].iloc[
             -2
@@ -67,11 +70,10 @@ for stock in portfolio:
         print(f"Skipping {stock['ticker']}: {e}")
 
 
-def get_pnl_pct(r):
-    return r["pnl_pct"]
 
 
-results.sort(key=get_pnl_pct, reverse=True)
+
+results.sort(key=utils.get_pnl_pct, reverse=True)
 
 total_invested = sum(r["invested"] for r in results)
 total_pnl_rs = sum(r["pnl_rs"] for r in results)
@@ -85,8 +87,8 @@ table = Table(title=f"Portfolio Tracker | {dateNow}")
 # justify="right" aligns numbers to the right, standard for financial tables
 table.add_column("Stock", style="bold white")
 table.add_column("Price (₹)", justify="right")
-table.add_column("Day %", justify="right")
-table.add_column("Day (₹)", justify="right")
+table.add_column("Last Day %", justify="right")
+table.add_column("Last Day (₹)", justify="right")
 table.add_column("Invested (₹)", justify="right")
 table.add_column("P&L (₹)", justify="right")
 table.add_column("P&L %", justify="right")
@@ -95,7 +97,7 @@ for r in results:
     pnl_color = "green" if r["pnl_rs"] >= 0 else "red"
     day_color = "green" if r["day_change_pct"] >= 0 else "red"
     # Strip exchange suffixes for clean display — HDFCBANK.NS becomes HDFCBANK
-    display_ticker = r["ticker"].replace(".NS", "").replace(".BO", "")
+    display_ticker = utils.clean_ticker(r["ticker"])
     # :,.2f formats numbers with thousand separators and 2 decimal places
     price_str = f"{r['current_price']:,.2f}"
     day_str = f"[{day_color}]{r['day_change_pct']:.2f}%[/{day_color}]"
@@ -133,7 +135,10 @@ etf_results = []
 for stock in etf_portfolio:
     try:    
         eTicker = yf.Ticker(stock["ticker"])
-        etf_hist = eTicker.history(period="2d")
+        etf_hist = eTicker.history(period="2d").dropna()
+        # On weekends/holidays, 2d may return only 1 valid row. Fall back to 5d to ensure we always have 2 trading days
+        if len(etf_hist) < 2:
+            etf_hist = eTicker.history(period="5d").dropna()
         etf_current_price = etf_hist["Close"].iloc[-1]  # iloc[-1] = last row = today
         etf_previous_close = etf_hist["Close"].iloc[-2]  # iloc[-2] = second last row = yesterday
         # Day change % uses previous close, not open — matches what Zerodha/NSE shows
@@ -172,8 +177,8 @@ etf_table = Table(title="ETFs")
 # justify="right" aligns numbers to the right, standard for financial tables
 etf_table.add_column("Stock", style="bold white")
 etf_table.add_column("Price (₹)", justify="right")
-etf_table.add_column("Day %", justify="right")
-etf_table.add_column("Day (₹)", justify="right")
+etf_table.add_column("Last Day %", justify="right")
+etf_table.add_column("Last Day (₹)", justify="right")
 etf_table.add_column("Invested (₹)", justify="right")
 etf_table.add_column("P&L (₹)", justify="right")
 etf_table.add_column("P&L %", justify="right")
@@ -238,7 +243,7 @@ for stock in watchlist:
 watchlist_table = Table(title="Watchlist")
 watchlist_table.add_column("Stock", style="bold white")
 watchlist_table.add_column("Price (₹)", justify="right")
-watchlist_table.add_column("Day %", justify="right")
+watchlist_table.add_column("Last Day %", justify="right")
 
 for r in watchlist_results:
     day_color = "green" if r["day_change_pct"] >= 0 else "red"

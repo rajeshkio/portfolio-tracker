@@ -3,17 +3,12 @@ import json
 import datetime
 from rich.console import Console
 from rich.table import Table
+import utils
 
 
 # converting to string as type datetime is not JSON serializable
 dateNow = datetime.datetime.now().strftime("%d %b %Y, %I:%M %p")
 fundamentals = []
-
-def fmt(value):
-    return str(round(float(value), 2)) if value is not None else "-"
-
-def fmt_pct(value):
-    return f"{value * 100:.2f}%" if value is not None else "-"
 
 with open("portfolio.json", "r") as f:
     data = json.load(f)
@@ -71,13 +66,13 @@ for r in data:
     else:
         recommend_color = "white"
     display_ticker = r["ticker"].replace(".NS", "").replace(".BO", "")
-    pe_str = fmt(r["trailingPE"])
-    forward_pe = fmt(r["forwardPE"])
-    eps_str = fmt(r["trailingEps"])
-    earning_growth = fmt_pct(r["earningsGrowth"])
-    return_on_equity = fmt_pct(r["returnOnEquity"])
-    profit_margin = fmt_pct(r["profitMargins"])
-    target_mean_price = fmt(r["targetMeanPrice"])
+    pe_str = utils.fmt(r["trailingPE"])
+    forward_pe = utils.fmt(r["forwardPE"])
+    eps_str = utils.fmt(r["trailingEps"])
+    earning_growth = utils.fmt_pct(r["earningsGrowth"])
+    return_on_equity = utils.fmt_pct(r["returnOnEquity"])
+    profit_margin = utils.fmt_pct(r["profitMargins"])
+    target_mean_price = utils.fmt(r["targetMeanPrice"])
     recommendation = f"[{recommend_color}]{str(r['recommendationKey']).replace('_', ' ').title()}[/{recommend_color}]"
     last_updated = r["lastUpdated"]
 
