@@ -37,40 +37,12 @@ results = []  # will hold calculated results for each stock after fetching
 
 for stock in portfolio:
     try:
-        portfolioTicker = yf.Ticker(stock["ticker"])
-        # period="2d" fetches today and yesterday so we can calculate day change %
-        hist = portfolioTicker.history(period="2d").dropna()
-        if len(hist) < 2:
-            hist = portfolioTicker.history(period="5d").dropna()
-        current_price = hist["Close"].iloc[-1]  # iloc[-1] = last row = today
-        previous_close = hist["Close"].iloc[
-            -2
-        ]  # iloc[-2] = second last row = yesterday
-        # Day change % uses previous close, not open — matches what Zerodha/NSE shows
-        day_change_pct = ((current_price - previous_close) / previous_close) * 100
-        daily_pnl_rs = (current_price - previous_close) * stock["qty"]
-        invested = stock["buy_price"] * stock["qty"]
-        current_value = current_price * stock["qty"]
-        pnl_rs = current_value - invested
-        pnl_pct = (pnl_rs / invested) * 100
-        # float() strips numpy's np.float64 wrapper so we get clean Python floats
         results.append(
-            {
-                "ticker": stock["ticker"],
-                "current_price": round(float(current_price), 2),
-                "day_change_pct": round(float(day_change_pct), 4),
-                "daily_pnl_rs": round(float(daily_pnl_rs), 2),
-                "invested": round(invested, 2),
-                "pnl_rs": round(float(pnl_rs), 2),
-                "pnl_pct": round(float(pnl_pct), 4),
-            }
+            utils.fetch_stock_data(stock["ticker"], stock["buy_price"], stock["qty"])
         )
     except Exception as e:
         # If any ticker fails (wrong symbol, delisted, no data), skip it and continue
         print(f"Skipping {stock['ticker']}: {e}")
-
-
-
 
 
 results.sort(key=utils.get_pnl_pct, reverse=True)
@@ -132,42 +104,15 @@ console.print(table)
 
 etf_portfolio = data["etfs"]
 etf_results = []
-for stock in etf_portfolio:
-    try:    
-        eTicker = yf.Ticker(stock["ticker"])
-        etf_hist = eTicker.history(period="2d").dropna()
-        # On weekends/holidays, 2d may return only 1 valid row. Fall back to 5d to ensure we always have 2 trading days
-        if len(etf_hist) < 2:
-            etf_hist = eTicker.history(period="5d").dropna()
-        etf_current_price = etf_hist["Close"].iloc[-1]  # iloc[-1] = last row = today
-        etf_previous_close = etf_hist["Close"].iloc[-2]  # iloc[-2] = second last row = yesterday
-        # Day change % uses previous close, not open — matches what Zerodha/NSE shows
-        day_etf_change_pct = ((etf_current_price - etf_previous_close) / etf_previous_close) * 100
-        daily_etf_pnl_rs = (etf_current_price - etf_previous_close) * stock["qty"]
-        etf_invested = stock["buy_price"] * stock["qty"]
-        etf_current_value = etf_current_price * stock["qty"]
-        pnl_etf_rs = etf_current_value - etf_invested
-        pnl_etf_pct = (pnl_etf_rs / etf_invested) * 100
-        # float() strips numpy's np.float64 wrapper so we get clean Python floats
-        etf_results.append(
-            {
-                "ticker": stock["ticker"],
-                "current_price": round(float(etf_current_price), 2),
-                "day_change_pct": round(float(day_etf_change_pct), 4),
-                "daily_pnl_rs": round(float(daily_etf_pnl_rs), 2),
-                "invested": round(etf_invested, 2),
-                "pnl_rs": round(float(pnl_etf_rs), 2),
-                "pnl_pct": round(float(pnl_etf_pct), 4),
-            }
-        )
+for r in etf_portfolio:
+    try:
+        etf_results.append(utils.fetch_stock_data(r["ticker"],r["buy_price"],r["qty"]))
     except Exception as e:
         # If any ticker fails (wrong symbol, delisted, no data), skip it and continue
-        print(f"Skipping {stock['ticker']}: {e}")
+        print(f"Skipping {r['ticker']}: {e}")
 
-def get_etf_pnl_pct(r):
-    return r["pnl_pct"]
-etf_results.sort(key=get_etf_pnl_pct, reverse=True)
 
+etf_results.sort(key=utils.get_pnl_pct, reverse=True)
 total_etf_invested = sum(r["invested"] for r in etf_results)
 total_etf_pnl_rs = sum(r["pnl_rs"] for r in etf_results)
 total_etf_pnl_pct = (total_etf_pnl_rs / total_etf_invested) * 100

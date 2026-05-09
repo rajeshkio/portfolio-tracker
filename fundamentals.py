@@ -34,7 +34,7 @@ for stock in portfolio:
     except Exception as e:
         print(f"Skipping {stock['ticker']}: {e}")
 
-#print(fundamentals)
+# print(fundamentals)
 
 with open("fundamentals.json", "w") as f:
     json.dump(fundamentals, f)
@@ -76,9 +76,8 @@ for r in data:
     recommendation = f"[{recommend_color}]{str(r['recommendationKey']).replace('_', ' ').title()}[/{recommend_color}]"
     last_updated = r["lastUpdated"]
 
-
     table.add_row(
-        display_ticker, 
+        display_ticker,
         str(pe_str),
         str(forward_pe),
         str(eps_str),
@@ -87,7 +86,7 @@ for r in data:
         str(profit_margin),
         str(target_mean_price),
         recommendation,
-        last_updated
-        )
+        last_updated,
+    )
 
 console.print(table)
