@@ -1,18 +1,16 @@
-import json
+
 from rich.console import Console
 import datetime
 import utils
 
 dateNow = datetime.datetime.now().strftime("%d %b %Y, %I:%M %p")
+console = Console()
+# Load portfolio data from JSON file.
+data = utils.load_json("portfolio.json")
 
-# Load portfolio data from JSON file. Keeping data separate from code means
-# we never need to edit tracker.py when our holdings change
-with open("portfolio.json", "r") as f:
-    data = json.load(f)
-
+# --- Fetch Portfolio ---
 portfolio = data["portfolio"]
 results = []  # will hold calculated results for each stock after fetching
-
 for stock in portfolio:
     try:
         results.append(
@@ -21,12 +19,9 @@ for stock in portfolio:
     except Exception as e:
         # If any ticker fails (wrong symbol, delisted, no data), skip it and continue
         print(f"Skipping {stock['ticker']}: {e}")
-
-console = Console()
-
 table = utils.build_pnl_table(results,f"Portfolio Tracker | {dateNow}")
-console.print(table)
 
+# --- Fetch ETFs ---
 etf_portfolio = data["etfs"]
 etf_results = []
 for r in etf_portfolio:
@@ -35,13 +30,9 @@ for r in etf_portfolio:
     except Exception as e:
         # If any ticker fails (wrong symbol, delisted, no data), skip it and continue
         print(f"Skipping {r['ticker']}: {e}")
-
-
-
 etf_table = utils.build_pnl_table(etf_results,"ETFs")
-console.print(etf_table)
 
-
+# --- Fetch Watchlist ---
 # Watchlist — stocks we monitor but don't own yet. No P&L columns needed
 watchlist = data["watchlist"]
 watchlist_results = []
@@ -50,9 +41,12 @@ for r in watchlist:
         watchlist_results.append(utils.fetch_stock_data(r["ticker"]))
     except Exception as e:
         print(f"Skipping {r['ticker']}: {e}")
-
 watchlist_table = utils.build_watchlist_table(watchlist_results,"Watchlist")
+
+# --- Display Tables ---
+console.print(table)
+console.print(etf_table)
 console.print(watchlist_table)
 
+# --- News Prompt ---
 utils.show_news_prompt(portfolio,console)
-

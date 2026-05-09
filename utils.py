@@ -1,4 +1,5 @@
 import yfinance as yf
+import json
 from rich.console import Console
 from rich.table import Table
 
@@ -6,14 +7,20 @@ from rich.table import Table
 def fmt(value):
     return str(round(float(value), 2)) if value is not None else "-"
 
-
 def fmt_pct(value):
     return f"{value * 100:.2f}%" if value is not None else "-"
-
 
 def get_pnl_pct(r):
     return r["pnl_pct"]
 
+def load_json(filename):
+    with open(filename, "r") as f:
+        data = json.load(f)
+    return data
+
+def save_json(filename, data):
+    with open(filename, "w") as f:
+        json.dump(data, f)
 
 def clean_ticker(ticker):
     return ticker.replace(".NS", "").replace(".BO", "")
