@@ -39,7 +39,7 @@ stock-one/
 
 ```bash
 git clone https://github.com/rajeshkio/portfolio-tracker.git
-cd stock-one
+cd portfolio-tracker
 ```
 
 ### 2. Create a virtual environment
